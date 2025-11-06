@@ -57,7 +57,7 @@ const sendOTPEmail = async (receiverEmail, otp, userName) => {
             secure: process.env.SMTP_SECURE,
             user: process.env.EMAIL_USER
         });
-
+        
         const info = await transporter.sendMail(mailOptions);
         console.log(`✅ OTP email sent successfully to ${receiverEmail}`);
         console.log('Message ID:', info.messageId);
@@ -163,7 +163,7 @@ const EmailVerify = (req, res) => {
             }
 
             const otp = generateOTP();
-            const otpExpiry = new Date(Date.now() + 5 * 60 * 1000).toISOString().slice(0, 19).replace('T', ' ');
+            const otpExpiry = new Date(Date.now() + 5 * 60 * 1000);
 
             db.query(
                 "UPDATE users SET otp = ?, otp_expiry = ? WHERE email = ?",
@@ -201,7 +201,6 @@ const VerifyOTP = (req, res) => {
     const { email, otp } = req.body;
 
     if (!email || !otp) {
-        console.log('Missing email or OTP:', { email, otp });
         return res.status(400).json({ message: "Email and OTP are required", success: false });
     }
 
@@ -213,33 +212,16 @@ const VerifyOTP = (req, res) => {
             }
 
             if (results.length === 0) {
-                console.log('User not found for email:', email);
                 return res.status(401).json({ message: "User not found", success: false });
             }
 
             const user = results[0];
-            console.log('User found:', {
-                email: user.email,
-                storedOTP: user.otp,
-                providedOTP: otp,
-                otpExpiry: user.otp_expiry,
-                currentTime: new Date().toISOString()
-            });
 
-            if (String(user.otp).trim() !== String(otp).trim()) {  // Robust string compare
-                console.log('OTP mismatch');
+            if (user.otp !== otp) {
                 return res.status(400).json({ message: "Invalid OTP", success: false });
             }
 
-            const currentTime = new Date();
-            const expiryTime = new Date(user.otp_expiry.replace(' ', 'T') + 'Z');
-            console.log('Time comparison:', {
-                currentTime: currentTime.toISOString(),
-                expiryTime: expiryTime.toISOString(),
-                isExpired: currentTime > expiryTime
-            });
-
-            if (currentTime > expiryTime) {
+            if (new Date() > new Date(user.otp_expiry)) {
                 return res.status(400).json({ message: "OTP has expired", success: false });
             }
 
@@ -248,7 +230,7 @@ const VerifyOTP = (req, res) => {
                 [email],
                 (updateErr) => {
                     if (updateErr) {
-                        console.error("Error clearing OTP:", updateErr);
+                        console.log("Error clearing OTP:", updateErr);
                     }
                 }
             );
@@ -265,7 +247,7 @@ const VerifyOTP = (req, res) => {
             });
         });
     } catch (error) {
-        console.error("Error verifying OTP:", error);
+        console.log("Error verifying OTP:", error);
         return res.status(500).json({ message: "Internal Server error", success: false });
     }
 };

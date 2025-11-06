@@ -12,7 +12,7 @@ dotenv.config();
 
 db.query("SELECT 1", (err, results) => {
     if (err) {
-        console.error("Error connecting to the database:", err.message);
+        console.error("Error connecting to the database:", err);
     } else {
         console.log("Connected to the MySQL database.");
     }
