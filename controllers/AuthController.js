@@ -163,7 +163,7 @@ const EmailVerify = (req, res) => {
             }
 
             const otp = generateOTP();
-            const otpExpiry = new Date(Date.now() + 5 * 60 * 1000).toISOString();
+            const otpExpiry = new Date(Date.now() + 5 * 60 * 1000).toISOString().slice(0, 19).replace('T', ' ');
 
             db.query(
                 "UPDATE users SET otp = ?, otp_expiry = ? WHERE email = ?",
