@@ -57,7 +57,7 @@ const sendOTPEmail = async (receiverEmail, otp, userName) => {
             secure: process.env.SMTP_SECURE,
             user: process.env.EMAIL_USER
         });
-        
+
         const info = await transporter.sendMail(mailOptions);
         console.log(`✅ OTP email sent successfully to ${receiverEmail}`);
         console.log('Message ID:', info.messageId);
@@ -226,13 +226,13 @@ const VerifyOTP = (req, res) => {
                 currentTime: new Date().toISOString()
             });
 
-            if (user.otp !== otp) {
-                console.log('OTP mismatch:', { storedOTP: user.otp, providedOTP: otp });
+            if (String(user.otp).trim() !== String(otp).trim()) {  // Robust string compare
+                console.log('OTP mismatch');
                 return res.status(400).json({ message: "Invalid OTP", success: false });
             }
 
             const currentTime = new Date();
-            const expiryTime = new Date(user.otp_expiry);
+            const expiryTime = new Date(user.otp_expiry.replace(' ', 'T') + 'Z');
             console.log('Time comparison:', {
                 currentTime: currentTime.toISOString(),
                 expiryTime: expiryTime.toISOString(),
